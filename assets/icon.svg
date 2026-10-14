@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Chromecast remote">
+  <rect width="128" height="128" rx="28" fill="#172554"/>
+  <rect x="40" y="13" width="48" height="102" rx="20" fill="#f8fafc"/>
+  <circle cx="64" cy="33" r="8" fill="#4285f4"/>
+  <circle cx="64" cy="58" r="12" fill="#dbeafe"/>
+  <circle cx="64" cy="58" r="4" fill="#4285f4"/>
+  <rect x="51" y="79" width="26" height="4" rx="2" fill="#94a3b8"/>
+  <rect x="51" y="89" width="26" height="4" rx="2" fill="#94a3b8"/>
+  <path d="M53 27a16 16 0 0 1 22 0M48 22a23 23 0 0 1 32 0" fill="none" stroke="#1d4ed8" stroke-linecap="round" stroke-width="3"/>
+</svg>

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google TV 遥控器（增强插件）设置</title>
+  <style>
+    :root { color-scheme:dark; font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#11151a; color:#e9edf2; --surface:#191f26; --line:#303a45; --muted:#9ba8b5; --accent:#83aef7; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:20px 22px 24px; max-width:840px; margin-inline:auto; }
+    header { display:flex; align-items:center; gap:13px; margin:0 0 20px; }
+    header img { width:46px; height:46px; }
+    h1 { font-size:19px; letter-spacing:-.02em; line-height:1.25; margin:0; }
+    .sub { margin:3px 0 0; color:var(--muted); font-size:13px; }
+    .card { background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:18px 20px; margin:12px 0; }
+    h2 { font-size:15px; letter-spacing:.01em; margin:0 0 12px; }
+    .label { color:var(--muted); font-size:12px; }
+    .note { color:var(--muted); margin:8px 0 0; font-size:12px; line-height:1.5; }
+    .notice { color:#e9edf2; background:#202a37; border:1px solid #3a4b60; border-radius:12px; padding:13px 16px; margin:0 0 14px; line-height:1.55; }
+    .notice ol { margin:0; padding-left:1.45em; display:grid; gap:7px; }
+    .error { color:#ffaaa0; white-space:pre-wrap; margin:8px 0 0; font-size:12px; }
+    .error:empty { display:none; }
+    .setting { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid var(--line); }
+    .setting:last-child { border-bottom:0; }
+    .setting label:first-child, .setting > strong { font-weight:600; }
+    select, button, input[type="text"], input[type="password"] { font:inherit; color:inherit; border:1px solid #3b4652; border-radius:8px; background:#12171d; padding:8px 10px; }
+    select { max-width:100%; }
+    button { cursor:pointer; background:#315f9e; border-color:#4678bb; font-weight:620; transition:background .14s ease, border-color .14s ease, transform .14s ease; }
+    button:hover:not(:disabled) { background:#3b6dab; border-color:#6491cd; }
+    button:active:not(:disabled) { transform:scale(.98); }
+    button.secondary { background:#222b34; border-color:#45515e; }
+    button.secondary:hover:not(:disabled) { background:#2b3641; border-color:#5a6a79; }
+    select:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    button:disabled, select:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
+    input[type="checkbox"] { accent-color:var(--accent); }
+    .toggle-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:10px 0; }
+    .toggle-copy { display:grid; gap:2px; }
+    .toggle-copy small { color:var(--muted); font-size:12px; }
+    .toggle-row input { width:17px; height:17px; flex:none; }
+    .hotkey-editor { display:flex; align-items:center; gap:8px; width:min(100%,420px); }
+    .hotkey-editor input { flex:1; min-width:0; cursor:default; }
+    .hotkey-editor input.capturing { border-color:var(--accent); box-shadow:0 0 0 2px #83aef733; }
+    .audio-input-picker { display:flex; align-items:center; justify-content:flex-end; gap:8px; min-width:0; flex:1; }
+    .audio-input-picker select { min-width:0; width:min(100%,380px); flex:1; }
+    .checkbox-row { display:flex; flex-wrap:wrap; gap:7px; margin:8px 0 2px; }
+    .check { color:#c5ced7; background:#12171d; border:1px solid #2b3540; border-radius:7px; padding:6px 9px; display:flex; align-items:center; gap:7px; }
+    details.advanced { margin-top:10px; border-top:1px solid var(--line); padding-top:10px; }
+    details.advanced summary { color:#c5ced7; cursor:pointer; font-size:12px; user-select:none; }
+    .advanced-content { padding-top:8px; }
+    .map-switcher-row { padding:8px 0; border-bottom:1px solid #29323c; }
+    .map-switcher-row .check { width:max-content; max-width:100%; }
+    .map-switcher-row .note { margin:6px 0 0; }
+    .mapping-fixed { display:grid; gap:6px; min-width:0; padding:9px 10px; border:1px solid #2b3540; border-radius:8px; background:#12171d; }
+    .mapping-fixed-title { display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
+    .fixed-badge { color:var(--accent); border:1px solid #3b5c85; background:#1a2b40; border-radius:999px; padding:1px 7px; font-size:11px; line-height:1.5; }
+    .mapping-fixed .note { margin:0; }
+    .map-row { display:grid; grid-template-columns:118px minmax(0,1fr); gap:14px; align-items:start; padding:8px 0; border-bottom:1px solid #29323c; }
+    .map-row:last-child { border-bottom:0; }
+    .map-row > strong { padding-top:9px; font-weight:580; }
+    .mapping-control { display:grid; gap:6px; min-width:0; }
+    .mapping-control > select { width:100%; min-width:0; }
+    .mapping-detail { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:6px; min-width:0; }
+    .mapping-detail > select, .mapping-detail > input:not([type="checkbox"]), .mapping-detail > button { width:100%; min-width:0; }
+    .mapping-detail .check { justify-self:start; max-width:100%; align-items:flex-start; line-height:1.4; }
+    .mapping-detail .check input[type="checkbox"] { flex:0 0 16px; width:16px; height:16px; margin:2px 0 0; }
+    .mapping-detail .mapping-focus-option { justify-self:stretch; width:100%; }
+    .mapping-focus-note { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+    .mapping-file-name { display:block; color:var(--muted); overflow-wrap:anywhere; font-size:12px; line-height:1.45; }
+    .actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:14px; }
+    #message { color:#c1ccd7; min-height:20px; font-size:12px; }
+    @media (max-width:520px) { body { padding:14px; } .card { padding:15px; } .setting { align-items:flex-start; flex-direction:column; gap:7px; } .hotkey-editor, .audio-input-picker { width:100%; } .map-row { grid-template-columns:1fr; gap:3px; } .map-row > strong { padding-top:2px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="../assets/icon.svg" alt="">
+    <div>
+      <h1>Google TV 遥控器（增强插件）</h1>
+      <p class="sub">按键映射与语音输入</p>
+    </div>
+  </header>
+
+  <div class="notice" role="note" aria-label="使用说明">
+    <ol>
+      <li><strong>使用前请关闭 Vokie 自带的“免提”快捷键。</strong>如需用电脑键盘触发录音，请启用并设置下方的插件快捷键。</li>
+      <li><strong>键盘快捷键：</strong>按一下开始，再按一下结束；长按不会改变操作。为避免重复启动，请勿把同一组合键同时绑定给 Vokie 自带的语音快捷键。插件会接管所设快捷键。</li>
+      <li><strong>收音来源：</strong>遥控器语音连接正常时，默认使用遥控器收音；遥控器未连接或语音通道不可用时，使用你在下方选择的 Mac 麦克风。</li>
+    </ol>
+  </div>
+
+  <section class="card" aria-labelledby="trigger-title">
+    <h2 id="trigger-title">Vokie 语音输入键盘快捷键（可激活遥控器收音）</h2>
+    <label class="check"><input id="triggerEnabled" type="checkbox"> 启用电脑键盘快捷键</label>
+    <div class="setting">
+      <label for="triggerCapture">电脑键盘快捷键</label>
+      <div class="hotkey-editor">
+        <input id="triggerCapture" type="text" readonly aria-label="当前快捷键">
+        <button id="captureTriggerButton" class="secondary" type="button">录入快捷键</button>
+      </div>
+    </div>
+    <p class="note">录音中按 Esc 可取消并舍弃本次内容。</p>
+    <div class="setting">
+      <label for="fallbackAudioInput">遥控器不可用时的 Mac 麦克风</label>
+      <div class="audio-input-picker">
+        <select id="fallbackAudioInput" aria-label="遥控器不可用时的 Mac 麦克风"></select>
+        <button id="refreshAudioInputsButton" class="secondary" type="button">刷新列表</button>
+      </div>
+    </div>
+    <p class="note" id="audioInputStatus">正在读取 Mac 麦克风…</p>
+    <p class="note">首次使用备用麦克风时，请允许 Vokie 访问麦克风。</p>
+    <details class="advanced">
+      <summary>手动选择主键与修饰键</summary>
+      <div class="advanced-content">
+        <div class="setting"><label for="triggerKey">主键</label><select id="triggerKey"></select></div>
+        <span class="label">修饰键</span>
+        <div class="checkbox-row" id="modifierList"></div>
+        <p class="note" id="triggerKeyHint">可选择主键并组合修饰键。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="mapping-title">
+    <h2 id="mapping-title">按键映射</h2>
+    <label class="toggle-row setting" for="hidEnabled">
+      <span class="toggle-copy"><strong>接收遥控器实体按键</strong><small>关闭后，遥控器语音功能仍可使用。</small></span>
+      <input id="hidEnabled" type="checkbox" aria-label="接收遥控器实体按键">
+    </label>
+    <div id="mappingRows"></div>
+    <template id="appSwitcherRowTemplate">
+      <div class="map-switcher-row">
+        <label class="check" for="appSwitcherNavigation"><input id="appSwitcherNavigation" type="checkbox"> 左右键选择应用</label>
+        <p class="note">默认开启后，按左右键浏览并选择应用；关闭后可重新设置左右键映射。</p>
+      </div>
+    </template>
+    <template id="voiceButtonRowTemplate">
+      <div class="map-row voice-info-row" role="group" aria-label="Google 助理键（语音键）">
+        <strong>Google 助理键（语音键）</strong>
+        <div class="mapping-fixed" aria-label="固定功能：遥控器语音输入">
+          <div class="mapping-fixed-title"><span class="fixed-badge">固定功能</span><strong>遥控器语音输入</strong></div>
+          <p class="note">短按进入免提，再按一次结束；长按（≥0.5 秒）松开后结束并转写。</p>
+        </div>
+      </div>
+    </template>
+  </section>
+
+  <section class="card" aria-labelledby="about-title">
+    <h2 id="about-title">关于与致谢</h2>
+    <p class="note">本插件仅用于 Vokie“设置 → 设备实验室 → 添加更多设备”，不是 Google、Vokie 或 vRemoter 的官方产品。</p>
+    <p class="note">感谢 <a href="https://github.com/VincentKingHsu/vRemoter" target="_blank" rel="noreferrer">VincentKingHsu/vRemoter</a> 提供 Chromecast Voice Remote 与 ATVV 协议研究参考。</p>
+  </section>
+
+  <div class="actions">
+    <button id="saveButton" type="button">保存设置</button>
+    <span id="message" role="status"></span>
+  </div>
+  <p class="error" id="errorText" role="alert"></p>
+
+  <script src="../assets/vokie-plugin-sdk.js"></script>
+  <script src="./index.js"></script>
+</body>
+</html>
