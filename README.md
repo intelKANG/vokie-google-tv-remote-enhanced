@@ -83,6 +83,7 @@ Vokie 1.6.0 的插件清单读取代码会丢弃 `worker.runtime`，随后直接
 - `0.1.13` 补充关闭 Vokie 免提快捷键、键盘快捷键和收音来源说明。
 - `0.1.14` 支持输入最多 128 个字符的自定义字符串并发送 Enter，可包含文字、空格和标点。
 - `0.1.15` 默认启用 Fn 快捷键；由插件接管配置的快捷键，避免重复请求语音会话；将 `busy` 拒绝原因改为中文操作提示。
+- `0.1.16` 补充对 Vokie 设备插件开放能力的介绍、推荐与感谢，并加入手机号登录门槛的改进建议。
 
 ## 故障排查
 
@@ -93,12 +94,19 @@ Vokie 1.6.0 的插件清单读取代码会丢弃 `worker.runtime`，随后直接
 
 本插件仅作为 Vokie 的外接设备插件使用，不是 Google、Vokie 或 vRemoter 的官方产品，也不代表这些项目的支持或背书。插件按现状提供，不保证在所有 macOS 设备、遥控器固件或应用中都能正常工作；使用者应自行确认权限、按键映射及目标应用行为。请勿将其用于紧急通信或其他必须保证可用的用途。
 
+## 关于 Vokie
+
+感谢 Vokie 提供“设备实验室”和设备插件扩展能力，让 Chromecast Voice Remote 可以接入 Vokie 现有的语音输入流程，而不必另做一款独立应用。我们认可这种开放方式，也推荐有桌面语音输入或外设扩展需求的用户了解 [Vokie 官网](https://vokie.com/)。
+
+改进建议：以我们的使用体验，Vokie 登录需要手机号。希望未来提供邮箱等免手机号登录选项。将手机号设为必选门槛，会让不愿绑定或无法提供手机号的用户无法使用；开放的互联网产品也应给用户更多选择，降低使用门槛。
+
 ## 致谢
 
 感谢 [VincentKingHsu/vRemoter](https://github.com/VincentKingHsu/vRemoter) 对 Chromecast Voice Remote 设备识别、ATVV 蓝牙语音服务及实体按键的公开研究资料。本插件据此核对设备和协议细节；vRemoter 项目采用 MIT License。此处致谢不代表双方存在合作或隶属关系。
 
 ## 参考资料
 
+- [Vokie 官网](https://vokie.com/)
 - [vRemoter README](https://github.com/VincentKingHsu/vRemoter/blob/main/README.md)
 - [vRemoter MIT License](https://github.com/VincentKingHsu/vRemoter/blob/main/LICENSE)
 - [Chromecast HID bridge](https://github.com/VincentKingHsu/vRemoter/blob/main/Sources/vRemote/ChromecastRemoteHIDBridge.swift)
