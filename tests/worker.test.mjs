@@ -287,7 +287,7 @@ test("power button defaults to the screen-lock target and can still be remapped"
   assert.ok(helperMessages.some(message => message.type === "post_key" && message.target === "F9"));
 });
 
-test("remote voice key and keyboard shortcut share short and long press modes", async () => {
+test("keyboard shortcut toggles hands-free on each press-down regardless of hold duration", async () => {
   const outgoing = [];
   const helperMessages = [];
   let now = 1_000;
@@ -329,28 +329,35 @@ test("remote voice key and keyboard shortcut share short and long press modes", 
   now += 1_000;
   runtime.handleHelper({type:"keyboard_trigger_down"});
   const firstKeyboardSession = runtime.active.requestId;
-  runtime.sessionAccepted({requestId:firstKeyboardSession});
+  runtime.handleHelper({type:"keyboard_trigger_down"});
+  assert.equal(runtime.active.requestId, firstKeyboardSession, "duplicate down events during one hold do not toggle twice");
   now += 200;
   runtime.handleHelper({type:"keyboard_trigger_up"});
-  assert.equal(runtime.active.requestId, firstKeyboardSession, "a short keyboard tap stays in hands-free mode");
+  assert.equal(runtime.active.requestId, firstKeyboardSession, "release only rearms the shortcut");
   assert.equal(outgoing.some(message => message.type === "session_stop" && message.requestId === firstKeyboardSession), false);
 
   now += 100;
   runtime.handleHelper({type:"keyboard_trigger_down"});
-  assert.equal(runtime.active.requestId, firstKeyboardSession, "the next keyboard press waits for release before stopping");
+  assert.equal(runtime.active.requestId, firstKeyboardSession, "the second press-down queues stop while Vokie accepts the session");
+  assert.equal(runtime.active.stopAfterAccept, true);
+  runtime.sessionAccepted({requestId:firstKeyboardSession});
+  assert.equal(runtime.active, null, "the accepted session ends without a third press");
+  assert.ok(outgoing.some(message => message.type === "session_stop" && message.requestId === firstKeyboardSession));
   now += 100;
   runtime.handleHelper({type:"keyboard_trigger_up"});
-  assert.ok(outgoing.some(message => message.type === "session_stop" && message.requestId === firstKeyboardSession), "the next short keyboard tap ends hands-free mode on release");
 
   now += 1_000;
   runtime.handleHelper({type:"keyboard_trigger_down"});
   const longKeyboardSession = runtime.active.requestId;
   runtime.sessionAccepted({requestId:longKeyboardSession});
-  now += 501;
+  now += 1_500;
+  assert.equal(runtime.active.requestId, longKeyboardSession, "holding the key does not trigger another action");
   runtime.handleHelper({type:"keyboard_trigger_up"});
-  assert.equal(runtime.active, null, "a long keyboard press ends and transcribes on release");
-  assert.ok(outgoing.some(message => message.type === "session_stop" && message.requestId === longKeyboardSession), "the long keyboard press stops on release");
-  assert.ok(helperMessages.filter(message => message.type === "ensure_capture").length >= 4);
+  assert.equal(runtime.active.requestId, longKeyboardSession, "release after a long hold does not stop recording");
+  runtime.handleHelper({type:"keyboard_trigger_down"});
+  assert.equal(runtime.active, null, "a further press ends the session regardless of the previous hold length");
+  assert.ok(outgoing.some(message => message.type === "session_stop" && message.requestId === longKeyboardSession));
+  assert.ok(helperMessages.filter(message => message.type === "ensure_capture").length >= 3);
   await runtime.shutdown();
 });
 
@@ -390,8 +397,8 @@ test("keyboard trigger uses the selected Vokie system microphone when the remote
 
   now += 100;
   runtime.handleHelper({type:"keyboard_trigger_down"});
-  runtime.handleHelper({type:"keyboard_trigger_up"});
   assert.ok(outgoing.some(message => message.type === "session_stop" && message.requestId === sessionId));
+  runtime.handleHelper({type:"keyboard_trigger_up"});
   await runtime.shutdown();
 });
 

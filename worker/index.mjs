@@ -646,6 +646,14 @@ export class PluginRuntime {
   triggerDown(source) {
     if (this.triggerPresses.has(source) || this.active?.stopAfterAccept) return;
     const session = this.active;
+    if (source === "keyboard") {
+      // Keyboard shortcuts are hands-free toggles: each press-down changes
+      // state immediately. Release only rearms the native key listener.
+      this.triggerPresses.set(source, {requestId: session?.requestId ?? null});
+      if (session) this.stopSessionFromTrigger(session);
+      else this.beginSession(source);
+      return;
+    }
     const press = {
       startedAt: this.now(),
       requestId: session?.requestId ?? null,
@@ -659,6 +667,10 @@ export class PluginRuntime {
   }
 
   triggerUp(source) {
+    if (source === "keyboard") {
+      this.triggerPresses.delete(source);
+      return;
+    }
     const press = this.triggerPresses.get(source);
     if (!press) return;
     this.triggerPresses.delete(source);
@@ -799,7 +811,7 @@ export class PluginRuntime {
     if (!this.active || message.requestId !== this.active.requestId) return;
     const session = this.active;
     this.lastError = message.reason === "busy"
-      ? "Vokie 当前已有另一段语音输入正在进行，无法同时开始录音。请先结束或取消当前输入；并确认没有把同一快捷键同时绑定给 Vokie 自带的语音快捷键。"
+      ? "Vokie 当前已有另一段语音输入正在进行，无法同时开始录音。请先结束或取消当前输入，再重试。"
       : "Vokie rejected the recording request: " + String(message.reason || "unknown");
     this.clearAudioInputQueryForSession(session.requestId);
     this.active = null;
