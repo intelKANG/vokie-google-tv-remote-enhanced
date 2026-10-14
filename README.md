@@ -69,20 +69,20 @@ Vokie 1.6.0 的插件清单读取代码会丢弃 `worker.runtime`，随后直接
 
 ## 验证范围与限制
 
-- 已在本机完成 manifest、包内路径、UI/SDK 引用、SVG 图标、helper bundle/Info.plist、universal 架构和 Node Worker 单元检查。
-- ATVV ADPCM nibble 解码、饱和边界与 8→16 kHz 插值有不依赖实体设备的本机单元检查。
-- Worker 的 WebSocket 首消息通过本机假 Host 握手检查，应为符合 Vokie v1 的 `plugin_hello`。
-- 本轮没有对遥控器做端到端试用，因此左右键直达和遥控器驱动 App Switcher 的图标选择/确认/取消还未实机确认。合成按键序列已编译；仍需在 macOS 实际切换器界面验证。
-- 全局键盘监听、macOS 文件面板显示、Launch Services 启动/激活及默认文件应用行为已完成编译与接口校验；不同应用对输入和切换行为的响应可能不同。
-- `0.1.9` 将名称更新为“Google TV 遥控器（增强插件）”，并让遥控器语音键与插件全局快捷键都支持短按免提、再次按下结束，以及长按松开结束并转写。长按阈值为 0.5 秒。
-- `0.1.10` 默认开启“左右键选择应用”，并把该选项放在左右方向键前；在返回键与 Home 之间展示只读的“Google 助理键（语音键）”功能说明。
-- `0.1.11` 为电脑快捷键增加 Mac 麦克风备用输入：遥控器 ATVV 语音通道就绪时优先用遥控器；通道未就绪时，通过 Vokie 列表中用户明确选择的系统输入开始录音。Worker 会在启动录音前再次校验所选输入。单元检查覆盖音源选择与按键会话逻辑；尚未在 MacBook 上对内置麦克风做实体录音验证。
-- `0.1.12` 将电脑键盘快捷键恢复为单击开始、再次单击结束，长按不再影响停止时机；当时匹配的快捷键事件会透传。`0.1.15` 改为由插件接管快捷键，避免重复启动语音会话。
-- `0.1.13` 将插件开头的使用说明改为三点，分别说明关闭 Vokie 免提快捷键、键盘快捷键操作方式和收音来源。
-- `0.1.14` 将“输入数字并发送 Enter”扩展为“输入字符串并发送 Enter”，支持文字、空格和标点，最多 128 个字符；拒绝换行和控制字符。
-- `0.1.15` 将电脑快捷键默认值设为已启用的 Fn；插件会接管所设快捷键，避免重复触发 Vokie 自带快捷键，并为 Host 返回的 `busy` 状态提供中文处理指引。
-- `0.1.14` 增加信源键字符串输入与 Enter 提交；此前已在本机验证普通输入和锁屏场景。
-- helper 由本机 ad-hoc 签名（用于本机完整性校验），不是 Developer ID 签名，也未做公证；若 Vokie 要求公证或额外 helper 签名策略，尚未验证。
+- 本版的 16 项 Worker/音频检查通过；包结构检查和 Vokie v1 假 Host 握手检查通过。helper 已编译为 arm64 与 x86_64 通用二进制，并通过本机签名完整性检查。
+- 本版尚未用真实遥控器与 Fn 实体键做端到端复测；左右键驱动 macOS 应用切换器的图标选择、确认和取消也需要在实际设备上验证。
+- 全局键盘监听、文件选择、Launch Services 启动/激活已完成编译与接口检查；不同应用对输入和切换行为的响应可能不同。
+- helper 使用本机 ad-hoc 签名，不是 Developer ID 签名，也未做公证。
+
+## 版本记录
+
+- `0.1.9` 将名称更新为“Google TV 遥控器（增强插件）”，并完善遥控器语音键的短按免提、再次按下结束和长按松开结束逻辑。
+- `0.1.10` 默认开启“左右键选择应用”，并把该选项放在左右方向键前；在返回键与 Home 之间展示“Google 助理键（语音键）”说明。
+- `0.1.11` 增加所选 Mac 麦克风备用输入；遥控器 ATVV 通道就绪时优先使用遥控器收音。
+- `0.1.12` 将电脑快捷键设为按下切换开始/结束，按住不影响停止时机；当时按键事件会透传。
+- `0.1.13` 补充关闭 Vokie 免提快捷键、键盘快捷键和收音来源说明。
+- `0.1.14` 支持输入最多 128 个字符的自定义字符串并发送 Enter，可包含文字、空格和标点。
+- `0.1.15` 默认启用 Fn 快捷键；由插件接管配置的快捷键，避免重复请求语音会话；将 `busy` 拒绝原因改为中文操作提示。
 
 ## 故障排查
 
@@ -100,6 +100,7 @@ Vokie 1.6.0 的插件清单读取代码会丢弃 `worker.runtime`，随后直接
 ## 参考资料
 
 - [vRemoter README](https://github.com/VincentKingHsu/vRemoter/blob/main/README.md)
+- [vRemoter MIT License](https://github.com/VincentKingHsu/vRemoter/blob/main/LICENSE)
 - [Chromecast HID bridge](https://github.com/VincentKingHsu/vRemoter/blob/main/Sources/vRemote/ChromecastRemoteHIDBridge.swift)
 - [ATVV protocol implementation](https://github.com/VincentKingHsu/vRemoter/blob/main/Sources/vRemote/ATVV/ATVVProtocol.swift)
 - [Chromecast button definitions](https://github.com/VincentKingHsu/vRemoter/blob/main/Sources/vRemote/RemoteMappingSupport.swift)
