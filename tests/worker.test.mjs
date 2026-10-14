@@ -287,7 +287,7 @@ test("power button defaults to the screen-lock target and can still be remapped"
   assert.ok(helperMessages.some(message => message.type === "post_key" && message.target === "F9"));
 });
 
-test("remote voice key keeps press modes while keyboard shortcut toggles on each press", async () => {
+test("remote voice key and keyboard shortcut share short and long press modes", async () => {
   const outgoing = [];
   const helperMessages = [];
   let now = 1_000;
@@ -330,13 +330,17 @@ test("remote voice key keeps press modes while keyboard shortcut toggles on each
   runtime.handleHelper({type:"keyboard_trigger_down"});
   const firstKeyboardSession = runtime.active.requestId;
   runtime.sessionAccepted({requestId:firstKeyboardSession});
-  now += 700;
+  now += 200;
   runtime.handleHelper({type:"keyboard_trigger_up"});
-  assert.equal(runtime.active.requestId, firstKeyboardSession, "holding the keyboard shortcut does not stop recording");
+  assert.equal(runtime.active.requestId, firstKeyboardSession, "a short keyboard tap stays in hands-free mode");
   assert.equal(outgoing.some(message => message.type === "session_stop" && message.requestId === firstKeyboardSession), false);
+
+  now += 100;
   runtime.handleHelper({type:"keyboard_trigger_down"});
-  assert.ok(outgoing.some(message => message.type === "session_stop" && message.requestId === firstKeyboardSession), "the next keyboard press ends recording immediately");
+  assert.equal(runtime.active.requestId, firstKeyboardSession, "the next keyboard press waits for release before stopping");
+  now += 100;
   runtime.handleHelper({type:"keyboard_trigger_up"});
+  assert.ok(outgoing.some(message => message.type === "session_stop" && message.requestId === firstKeyboardSession), "the next short keyboard tap ends hands-free mode on release");
 
   now += 1_000;
   runtime.handleHelper({type:"keyboard_trigger_down"});
@@ -344,11 +348,9 @@ test("remote voice key keeps press modes while keyboard shortcut toggles on each
   runtime.sessionAccepted({requestId:longKeyboardSession});
   now += 501;
   runtime.handleHelper({type:"keyboard_trigger_up"});
-  assert.equal(runtime.active.requestId, longKeyboardSession, "a long keyboard press remains active after release");
-  runtime.handleHelper({type:"keyboard_trigger_down"});
-  assert.ok(outgoing.some(message => message.type === "session_stop" && message.requestId === longKeyboardSession), "the next keyboard press ends a held session");
-  runtime.handleHelper({type:"keyboard_trigger_up"});
-  assert.ok(helperMessages.filter(message => message.type === "ensure_capture").length >= 3);
+  assert.equal(runtime.active, null, "a long keyboard press ends and transcribes on release");
+  assert.ok(outgoing.some(message => message.type === "session_stop" && message.requestId === longKeyboardSession), "the long keyboard press stops on release");
+  assert.ok(helperMessages.filter(message => message.type === "ensure_capture").length >= 4);
   await runtime.shutdown();
 });
 

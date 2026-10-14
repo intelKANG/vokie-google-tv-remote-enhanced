@@ -652,15 +652,6 @@ export class PluginRuntime {
       sessionWasActive: !!session
     };
     this.triggerPresses.set(source, press);
-    if (source === "keyboard") {
-      if (!session) {
-        this.beginSession(source);
-        press.requestId = this.active?.requestId ?? null;
-      } else {
-        this.stopSessionFromTrigger(session);
-      }
-      return;
-    }
     if (!session) {
       this.beginSession(source);
       press.requestId = this.active?.requestId ?? null;
@@ -671,7 +662,6 @@ export class PluginRuntime {
     const press = this.triggerPresses.get(source);
     if (!press) return;
     this.triggerPresses.delete(source);
-    if (source === "keyboard") return;
     const session = this.active;
     if (!session || !press.requestId || session.requestId !== press.requestId) return;
     const heldFor = Math.max(0, this.now() - press.startedAt);
