@@ -8,7 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "vokie.plugin.json"), "utf8"));
 assert.match(manifest.id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
 assert.equal(manifest.apiVersion, "1");
-assert.equal(manifest.version, "0.1.19");
+assert.equal(manifest.version, "0.1.21");
 assert.equal("runtime" in manifest.worker, false, "Vokie 1.6.0 drops worker.runtime while normalizing the manifest");
 assert.deepEqual(manifest.platforms, ["darwin"]);
 assert.ok(manifest.transports.includes("ble") && manifest.transports.includes("hid"));

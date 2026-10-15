@@ -666,7 +666,7 @@
       });
       const note = document.createElement("span");
       note.className = "mapping-file-name";
-      note.textContent = "按键时输入这段字符串并发送 Enter；最多 128 个字符，不含换行。内容以明文保存在 Vokie 插件设置中。少数 App 可能无法接收系统模拟的 Unicode 文字输入。";
+      note.textContent = "按键时输入字符串并发送 Enter（最多 128 个字符）。可映射到当前键盘布局的 ASCII 字符按真实按键发送；其他 Unicode 文字走系统文本事件，锁屏兼容性不保证。内容以明文保存在设置中，请勿存放敏感密码。";
       detail.append(input, note);
     } else if (mode === "customKey") {
       const shortcut = shortcutByButton[buttonId];

@@ -94,6 +94,12 @@ static void Log(NSString *message) {
 - (void)postKeyCodeWithoutText:(uint16_t)keyCode keyDown:(BOOL)down flags:(CGEventFlags)flags;
 - (void)postOptionLShortcutWithoutText;
 - (void)postKeyCode:(uint16_t)keyCode keyDown:(BOOL)down flags:(CGEventFlags)flags;
+- (BOOL)resolvePrintableASCIICharacter:(UniChar)character
+                                layout:(const UCKeyboardLayout *)layout
+                               keyCode:(uint16_t *)keyCode
+                                 flags:(CGEventFlags *)flags;
+- (NSArray<NSDictionary *> *)physicalKeyStrokesForASCIIText:(NSString *)text;
+- (void)postPhysicalKeyStroke:(NSDictionary *)stroke;
 - (void)beginAppSwitcher;
 - (void)beginAppSwitcherWithDirection:(NSInteger)direction;
 - (void)finishAppSwitcher:(BOOL)commit;
@@ -1095,6 +1101,94 @@ static CGEventRef KeyboardEventCallback(
     return YES;
 }
 
+- (BOOL)resolvePrintableASCIICharacter:(UniChar)character
+                                layout:(const UCKeyboardLayout *)layout
+                               keyCode:(uint16_t *)keyCode
+                                 flags:(CGEventFlags *)flags {
+    const struct {
+        UInt32 carbonModifiers;
+        CGEventFlags eventFlags;
+    } modifierSets[] = {
+        {0, 0},
+        {(UInt32)((shiftKey >> 8) & 0xFF), kCGEventFlagMaskShift},
+        {(UInt32)((optionKey >> 8) & 0xFF), kCGEventFlagMaskAlternate},
+        {(UInt32)(((shiftKey | optionKey) >> 8) & 0xFF), kCGEventFlagMaskShift | kCGEventFlagMaskAlternate}
+    };
+
+    for (NSUInteger modifierIndex = 0; modifierIndex < sizeof(modifierSets) / sizeof(modifierSets[0]); modifierIndex++) {
+        for (UInt16 candidate = 0; candidate < 128; candidate++) {
+            UInt32 deadKeyState = 0;
+            UniChar translated[8] = {0};
+            UniCharCount translatedLength = 0;
+            OSStatus status = UCKeyTranslate(
+                layout,
+                candidate,
+                kUCKeyActionDown,
+                modifierSets[modifierIndex].carbonModifiers,
+                LMGetKbdType(),
+                0,
+                &deadKeyState,
+                sizeof(translated) / sizeof(translated[0]),
+                &translatedLength,
+                translated
+            );
+            if (status != noErr || deadKeyState != 0 || translatedLength != 1 || translated[0] != character) continue;
+            if (keyCode) *keyCode = candidate;
+            if (flags) *flags = modifierSets[modifierIndex].eventFlags;
+            return YES;
+        }
+    }
+    return NO;
+}
+
+- (NSArray<NSDictionary *> *)physicalKeyStrokesForASCIIText:(NSString *)text {
+    TISInputSourceRef inputSource = TISCopyCurrentKeyboardLayoutInputSource();
+    if (!inputSource) return nil;
+    CFDataRef layoutData = (CFDataRef)TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData);
+    if (!layoutData || CFDataGetLength(layoutData) < (CFIndex)sizeof(UCKeyboardLayout)) {
+        CFRelease(inputSource);
+        return nil;
+    }
+    const UCKeyboardLayout *layout = (const UCKeyboardLayout *)CFDataGetBytePtr(layoutData);
+    if (!layout) {
+        CFRelease(inputSource);
+        return nil;
+    }
+
+    NSMutableArray<NSDictionary *> *strokes = [NSMutableArray arrayWithCapacity:text.length];
+    for (NSUInteger index = 0; index < text.length; index++) {
+        UniChar character = [text characterAtIndex:index];
+        if (character < 0x20 || character > 0x7E) {
+            CFRelease(inputSource);
+            return nil;
+        }
+        uint16_t keyCode = 0;
+        CGEventFlags flags = 0;
+        if (![self resolvePrintableASCIICharacter:character layout:layout keyCode:&keyCode flags:&flags]) {
+            CFRelease(inputSource);
+            return nil;
+        }
+        [strokes addObject:@{@"keyCode": @(keyCode), @"flags": @(flags)}];
+    }
+    CFRelease(inputSource);
+    return strokes;
+}
+
+- (void)postPhysicalKeyStroke:(NSDictionary *)stroke {
+    uint16_t keyCode = [stroke[@"keyCode"] unsignedShortValue];
+    CGEventFlags flags = [stroke[@"flags"] unsignedLongLongValue];
+    BOOL shift = (flags & kCGEventFlagMaskShift) != 0;
+    BOOL option = (flags & kCGEventFlagMaskAlternate) != 0;
+
+    if (shift) [self postKeyCode:0x38 keyDown:YES flags:kCGEventFlagMaskShift];
+    if (option) [self postKeyCode:0x3A keyDown:YES flags:(shift ? kCGEventFlagMaskShift : 0) | kCGEventFlagMaskAlternate];
+    [self postKeyCode:keyCode keyDown:YES flags:flags];
+    [self postKeyCode:keyCode keyDown:NO flags:flags];
+    if (option) [self postKeyCode:0x3A keyDown:NO flags:shift ? kCGEventFlagMaskShift : 0];
+    if (shift) [self postKeyCode:0x38 keyDown:NO flags:0];
+    usleep(5000);
+}
+
 - (void)postStringAndEnter:(NSString *)text {
     if (text.length == 0) {
         Emit(@"action_error", @{@"message": @"此按键没有设置要输入的字符串。"});
@@ -1106,22 +1200,28 @@ static CGEventRef KeyboardEventCallback(
         Emit(@"action_error", @{@"message": @"字符串最多 128 个字符，且不能包含换行或控制字符。"});
         return;
     }
-    NSUInteger offset = 0;
-    while (offset < text.length) {
-        NSUInteger chunkLength = MIN((NSUInteger)16, text.length - offset);
-        if (offset + chunkLength < text.length) {
-            unichar last = [text characterAtIndex:offset + chunkLength - 1];
-            unichar next = [text characterAtIndex:offset + chunkLength];
-            BOOL splitsSurrogatePair = last >= 0xD800 && last <= 0xDBFF && next >= 0xDC00 && next <= 0xDFFF;
-            if (splitsSurrogatePair) chunkLength--;
+    NSArray<NSDictionary *> *physicalStrokes = [self physicalKeyStrokesForASCIIText:text];
+    if (physicalStrokes) {
+        for (NSDictionary *stroke in physicalStrokes) [self postPhysicalKeyStroke:stroke];
+    } else {
+        NSUInteger offset = 0;
+        while (offset < text.length) {
+            NSUInteger chunkLength = MIN((NSUInteger)16, text.length - offset);
+            if (offset + chunkLength < text.length) {
+                unichar last = [text characterAtIndex:offset + chunkLength - 1];
+                unichar next = [text characterAtIndex:offset + chunkLength];
+                BOOL splitsSurrogatePair = last >= 0xD800 && last <= 0xDBFF && next >= 0xDC00 && next <= 0xDFFF;
+                if (splitsSurrogatePair) chunkLength--;
+            }
+            NSString *chunk = [text substringWithRange:NSMakeRange(offset, chunkLength)];
+            if (![self postUnicodeChunk:chunk]) {
+                Emit(@"action_error", @{@"message": @"无法发送输入字符串。"});
+                return;
+            }
+            offset += chunkLength;
         }
-        NSString *chunk = [text substringWithRange:NSMakeRange(offset, chunkLength)];
-        if (![self postUnicodeChunk:chunk]) {
-            Emit(@"action_error", @{@"message": @"无法发送输入字符串。"});
-            return;
-        }
-        offset += chunkLength;
     }
+    usleep(50000);
     [self postKeyCode:0x24 modifiers:@[]];
     Emit(@"action_done", @{});
 }

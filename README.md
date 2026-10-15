@@ -13,7 +13,7 @@ Vokie 是 AI 语音输入与会议转写助手，可将自然口述整理成可�
 
 ## 下载与安装
 
-[下载 macOS 插件压缩包](https://github.com/intelKANG/vokie-google-tv-remote-enhanced/releases/latest/download/vokie-google-tv-remote-enhanced-0.1.20-macos.zip)
+[下载 macOS 插件压缩包](https://github.com/intelKANG/vokie-google-tv-remote-enhanced/releases/latest/download/vokie-google-tv-remote-enhanced-0.1.21-macos.zip)
 
 1. 下载并解压压缩包。
 2. 在 Vokie“设置 → 设备实验室 → 添加更多设备”中，选择解压后包含 `vokie.plugin.json` 的文件夹。
@@ -24,6 +24,7 @@ Vokie 是 AI 语音输入与会议转写助手，可将自然口述整理成可�
 - 使用前请关闭 Vokie 自带的“按住说话”和“免提”快捷键。
 - 如需使用 Vokie 自带的“按住说话”，请另设一个快捷键。该功能使用 Mac 麦克风，不能调用遥控器麦克风。
 - 插件目前仅支持 macOS 和 Chromecast Voice Remote（VID `0x18D1`、PID `0x9450`）；Windows 暂不支持。
+- “输入字符串并发送 Enter”会按当前键盘布局逐键发送可映射的 ASCII 字符；其他 Unicode 字符走系统文本事件，兼容性因 App 而异，不能保证在 macOS 锁屏密码框中可用。
 - 自定义文字会以明文保存在插件设置中，请勿用于敏感密码。
 
 ## 致谢与建议
