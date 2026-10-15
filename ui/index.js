@@ -518,7 +518,7 @@
 
   function setMessage(message, error=false) {
     $("message").textContent = message;
-    $("message").style.color = error ? "#ffb3a8" : "#b7c5d5";
+    $("message").dataset.error = error ? "true" : "false";
   }
   function option(select, value, label) {
     const item = document.createElement("option");
@@ -635,7 +635,7 @@
         focusLabel.append(focusCheckbox, document.createTextNode("打开后发送 ⌥+L，尝试聚焦聊天输入框"));
         const hint = document.createElement("span");
         hint.className = "mapping-file-name mapping-focus-note";
-        hint.textContent = "聚焦效果会因 ChatGPT 当前页面而异。";
+        hint.textContent = "受 macOS 键盘事件处理限制，聚焦时可能会额外输入一个「¬」符号，不影响使用；实际效果也会因 ChatGPT 当前页面而异。";
         detail.append(focusLabel, hint);
       }
     } else if (mode === "openFile") {
